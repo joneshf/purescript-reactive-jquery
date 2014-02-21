@@ -1,10 +1,10 @@
 module ReactiveJQuery where
 
 import Prelude
-import Eff
+import Control.Monad
+import Control.Monad.Eff
 import JQuery
 import Reactive
-import Monad
 
 -- |
 -- Bind the value property of a text box to the specified RVar

@@ -1,8 +1,7 @@
 module Main where
 
 import Prelude
-import Eff
-import Trace
+import Control.Monad.Eff
 import JQuery
 import Reactive
 import ReactiveJQuery

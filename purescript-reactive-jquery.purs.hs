@@ -1,10 +1,12 @@
 module ReactiveJQuery where
 
 import Prelude
-import Control.Monad
 import Control.Monad.Eff
 import JQuery
 import Reactive
+import Control.Monad
+import Data.Array (insertAt, deleteAt, updateAt)
+import Data.IORef (newIORef, readIORef, modifyIORef, unsafeRunIORef)
 
 -- |
 -- Bind the value property of a text box to the specified RVar
@@ -15,6 +17,7 @@ bindValueTwoWay ref input = do
   setValue value input
   
   -- Subscribe for updates on the input
+  -- TODO: add this to the subscription
   flip (on "change") input $ do
     newValue <- getValue input
     writeRVar ref newValue
@@ -40,27 +43,39 @@ bindTextOneWay comp el = do
 -- |
 -- Bind an RArray
 --
-bindArray arr el create = do
+bindArray arr el create = unsafeRunIORef $ do
+  -- Create an IORef to hold an array of DOM elements and associated Subscriptions
+  elements <- newIORef []
+
   -- Create a DOM element for each element currently in the array
   arr' <- readRArray arr
   flip mapM arr' $ \a -> do
-    child <- create a
+    { el = child } <- create a
     child `append` el
 
   -- Subscribe for updates on the array
   subscribeArray arr $ \change -> case change of
     Inserted a index -> do
-      child <- create a
-      -- TODO: insert the child at the right index
-      child `append` el 
+      element@{ el = child, subscription = sub } <- create a
+      modifyIORef elements (insertAt index element)
+      case index of
+        0 -> append child el
+        _ -> appendAtIndex index child el 
       return {}
     Updated a index -> do
-      child <- create a
-      -- TODO: remove the existing DOM element
-      child `append` el 
-      -- TODO: remove the existing bindings
+      { el = old, subscription = Subscription unsubscribe } <- (flip (!!) index) <$> readIORef elements
+      unsubscribe
+      remove old
+
+      element@{ el = new, subscription = sub } <- create a
+      modifyIORef elements (updateAt index element)
+      new `append` el
+ 
       return {}
     Removed index -> do
-      -- TODO: remove the bindings
+      { el = child, subscription = Subscription unsubscribe } <- (flip (!!) index) <$> readIORef elements
+      unsubscribe
+      remove child
+      modifyIORef elements (deleteAt index 1)
       return {}
 

@@ -1,7 +1,10 @@
 module Main where
 
 import Prelude
+import Control.Monad
 import Control.Monad.Eff
+import Data.Monoid
+import Debug.Trace
 import JQuery
 import Reactive
 import ReactiveJQuery
@@ -52,23 +55,43 @@ main = do
   ul <- create "<ul>"
 
   -- Bind the ul to the array
-  bindArray arr ul $ \s -> do
+  bindArray arr ul $ \entry -> do
     li <- create "<li>"
-    s `appendText` li
+    entryInput <- create "<input>"
+    entryInput `append` li
+    sub <- bindValueTwoWay entry entryInput
+    readRVar entry >>= flip setValue entryInput
+
+    btn <- create "<button>"
+    "Remove" `appendText` btn
+    flip (on "click") btn $ do
+      removeRArray arr 0
+    btn `append` li
+
+    return { el: li, subscription: sub }
 
   ul `append` b
 
   -- Add button
   newEntryDiv <- create "<div>"
-  newEntryInput <- create "<input>"
-  newEntryInput `append` newEntryDiv
   btn <- create "<button>"
   "Add" `appendText` btn
   btn `append` newEntryDiv
   newEntryDiv `append` b
 
   flip (on "click") btn $ do
-    entry <- getValue newEntryInput
-    insertRArray arr entry 0
+    r <- newRVar ""
+    insertRArray arr r 0
+
+  -- Create a paragraph to display a concatenated string
+  allTextLabel <- create "<p>"
+  allTextLabel `append` b
+
+  let allText = extendComputed concatAll <*> toComputedArray arr
+  bindTextOneWay allText allTextLabel
 
 
+concatAll :: forall eff. [RVar String] -> Eff (reactive :: Reactive | eff) String
+concatAll rs = do
+  ss <- mapM readRVar rs
+  return $ mconcat ss

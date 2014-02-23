@@ -9,9 +9,13 @@ import JQuery
 import Reactive
 import ReactiveJQuery
 
+main = do
+  personDemo
+  todoListDemo
+
 greet firstName lastName = "Hello, " ++ firstName ++ " " ++ lastName ++ "!"
 
-main = do
+personDemo = do
   -- Create new reactive variables to hold the user's names
   firstName <- newRVar "John"
   lastName <- newRVar "Smith"
@@ -46,8 +50,9 @@ main = do
   let greetingC = greet <$> toComputed firstName <*> toComputed lastName
   bindTextOneWay greetingC greeting
 
-
-
+todoListDemo = do
+  -- Get the document body
+  b <- body
 
   -- Create an array
   arr <- newRArray

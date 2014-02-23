@@ -92,9 +92,3 @@ main = do
     ss <- mapM toComputed rs
     return $ mconcat ss
   bindTextOneWay allText allTextLabel
-
-
-concatAll :: forall eff. [RVar String] -> Eff (reactive :: Reactive | eff) String
-concatAll rs = do
-  ss <- mapM readRVar rs
-  return $ mconcat ss

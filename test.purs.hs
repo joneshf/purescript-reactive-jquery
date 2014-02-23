@@ -87,7 +87,10 @@ main = do
   allTextLabel <- create "<p>"
   allTextLabel `append` b
 
-  let allText = extendComputed concatAll <*> toComputedArray arr
+  let allText = do
+    rs <- toComputedArray arr
+    ss <- mapM toComputed rs
+    return $ mconcat ss
   bindTextOneWay allText allTextLabel
 
 

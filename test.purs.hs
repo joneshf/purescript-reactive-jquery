@@ -5,6 +5,8 @@ import Control.Monad
 import Control.Monad.Eff
 import Data.Monoid
 import Debug.Trace
+import Data.Array (map, foldl)
+import Global (parseInt)
 import JQuery
 import Reactive
 import ReactiveJQuery
@@ -60,20 +62,24 @@ todoListDemo = do
   ul <- create "<ul>"
 
   -- Bind the ul to the array
-  bindArray arr ul $ \entry -> do
+  bindArray arr ul $ \entry index -> do
     li <- create "<li>"
-    entryInput <- create "<input>"
-    entryInput `append` li
-    sub <- bindValueTwoWay entry entryInput
-    readRVar entry >>= flip setValue entryInput
+
+    countInput <- create "<input>"
+    countInput `append` li
+    sub1 <- bindValueTwoWay entry.count countInput
+    
+    textInput <- create "<input>"
+    textInput `append` li
+    sub2 <- bindValueTwoWay entry.text textInput
 
     btn <- create "<button>"
     "Remove" `appendText` btn
     flip (on "click") btn $ do
-      removeRArray arr 0
+      removeRArray arr index
     btn `append` li
 
-    return { el: li, subscription: sub }
+    return { el: li, subscription: sub1 <> sub2 }
 
   ul `append` b
 
@@ -85,15 +91,16 @@ todoListDemo = do
   newEntryDiv `append` b
 
   flip (on "click") btn $ do
-    r <- newRVar ""
-    insertRArray arr r 0
+    text <- newRVar ""
+    count <- newRVar "1"
+    insertRArray arr { text: text, count: count } 0
 
-  -- Create a paragraph to display a concatenated string
-  allTextLabel <- create "<p>"
-  allTextLabel `append` b
+  -- Create a paragraph to display the task counter
+  counterLabel <- create "<p>"
+  counterLabel `append` b
 
-  let allText = do
+  let counter = (flip (++) " tasks remaining") <<< show <$> do
     rs <- toComputedArray arr
-    ss <- mapM toComputed rs
-    return $ mconcat ss
-  bindTextOneWay allText allTextLabel
+    cs <- map parseInt <$> mapM (\entry -> toComputed entry.count) rs
+    return $ foldl (+) 0 cs
+  bindTextOneWay counter counterLabel

@@ -50,13 +50,13 @@ bindArray arr el create = unsafeRunIORef $ do
   -- Create a DOM element for each element currently in the array
   arr' <- readRArray arr
   flip mapM arr' $ \a -> do
-    { el = child } <- create a
+    { el = child } <- create a 0 --TODO
     child `append` el
 
   -- Subscribe for updates on the array
   subscribeArray arr $ \change -> case change of
     Inserted a index -> do
-      element@{ el = child, subscription = sub } <- create a
+      element@{ el = child, subscription = sub } <- create a index
       modifyIORef elements (insertAt index element)
       case index of
         0 -> append child el
@@ -67,7 +67,7 @@ bindArray arr el create = unsafeRunIORef $ do
       unsubscribe
       remove old
 
-      element@{ el = new, subscription = sub } <- create a
+      element@{ el = new, subscription = sub } <- create a index
       modifyIORef elements (updateAt index element)
       new `append` el
  

@@ -1,1 +1,1 @@
-psc purescript-reactive/reactive.purs.hs purescript-jquery/jquery.purs purescript-reactive-jquery.purs.hs test.purs.hs -o test.js --main --module Main --module Reactive --tco --magic-do
+psc purescript-json/src/Data.JSON.purs purescript-reactive/reactive.purs.hs purescript-jquery/jquery.purs purescript-reactive-jquery.purs.hs test.purs.hs -o test.js --main --module Main --module Data.Either --module Reactive --tco --magic-do

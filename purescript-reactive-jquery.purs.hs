@@ -1,30 +1,53 @@
 module ReactiveJQuery where
 
 import Prelude
+import Data.Either
 import Control.Monad.Eff
 import JQuery
 import Reactive
 import Control.Monad
+import Data.JSON
 import Data.Array (insertAt, deleteAt, updateAt)
 import Data.IORef (newIORef, readIORef, modifyIORef, unsafeRunIORef)
 
 -- |
--- Bind the value property of a text box to the specified RVar
--- 
+-- Bind the value property of an input field to the specified RVar
+-- i
+bindValueTwoWay :: forall a eff. (ReadJSON a) => RVar a -> JQuery -> Eff (reactive :: Reactive, dom :: DOM | eff) Subscription
 bindValueTwoWay ref input = do
   -- Set the value on the input to the current value
   value <- readRVar ref
-  setValue value input
+  setValue (toJSON value) input
   
   -- Subscribe for updates on the input
   -- TODO: add this to the subscription
   flip (on "change") input $ do
-    newValue <- getValue input
+    Right newValue <- runParser readJSON <$> getValue input
     writeRVar ref newValue
 
   -- Subscribe for updates on the RVar
   subscribe ref $ \newValue -> do
-    setValue newValue input
+    setValue (toJSON newValue) input
+    return {}
+
+-- |
+-- Bind the checked property of a checkbox to the specified RVar
+-- i
+bindCheckedTwoWay :: forall a eff. RVar Boolean -> JQuery -> Eff (reactive :: Reactive, dom :: DOM | eff) Subscription
+bindCheckedTwoWay ref checkbox = do
+  -- Set the checked status based on the current value
+  value <- readRVar ref
+  setProp "checked" (toJSON value) checkbox
+  
+  -- Subscribe for updates on the checkbox
+  -- TODO: add this to the subscription
+  flip (on "change") checkbox $ do
+    Right newValue <- runParser readJSON <$> getProp "checked" checkbox
+    writeRVar ref newValue
+
+  -- Subscribe for updates on the RVar
+  subscribe ref $ \newValue -> do
+    setProp "checked" (toJSON newValue) checkbox
     return {}
 
 -- |

@@ -1,11 +1,13 @@
 module Main where
 
 import Prelude
+import Data.JSON
 import Control.Monad
 import Control.Monad.Eff
 import Data.Monoid
 import Debug.Trace
-import Data.Array (map, foldl)
+import Data.Maybe
+import Data.Array (map, foldl, head)
 import Global (parseInt)
 import JQuery
 import Reactive
@@ -65,9 +67,10 @@ todoListDemo = do
   bindArray arr ul $ \entry index -> do
     li <- create "<li>"
 
-    countInput <- create "<input>"
-    countInput `append` li
-    sub1 <- bindValueTwoWay entry.count countInput
+    completedInput <- create "<input>"
+    setAttr "type" (toJSON "checkbox") completedInput
+    completedInput `append` li
+    sub1 <- bindCheckedTwoWay entry.completed completedInput
     
     textInput <- create "<input>"
     textInput `append` li
@@ -92,8 +95,19 @@ todoListDemo = do
 
   flip (on "click") btn $ do
     text <- newRVar ""
-    count <- newRVar "1"
-    insertRArray arr { text: text, count: count } 0
+    completed <- newRVar false
+    insertRArray arr { text: text, completed: completed } 0
+
+  -- Create a paragraph to display the next task
+  nextTaskLabel <- create "<p>"
+  nextTaskLabel `append` b
+
+  let nextTask = do
+    task <- head <$> toComputedArray arr
+    case task of
+      Nothing -> return "Done!"
+      Just { text = text } -> (++) "Next task: " <$> toComputed text
+  bindTextOneWay nextTask nextTaskLabel
 
   -- Create a paragraph to display the task counter
   counterLabel <- create "<p>"
@@ -101,6 +115,6 @@ todoListDemo = do
 
   let counter = (flip (++) " tasks remaining") <<< show <$> do
     rs <- toComputedArray arr
-    cs <- map parseInt <$> mapM (\entry -> toComputed entry.count) rs
+    cs <- map (\c -> if c then 0 else 1) <$> mapM (\entry -> toComputed entry.completed) rs
     return $ foldl (+) 0 cs
   bindTextOneWay counter counterLabel

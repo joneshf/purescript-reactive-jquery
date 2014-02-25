@@ -17,7 +17,7 @@ bindValueTwoWay :: forall a eff. (ReadJSON a) => RVar a -> JQuery -> Eff (reacti
 bindValueTwoWay ref input = do
   -- Set the value on the input to the current value
   value <- readRVar ref
-  setValue (toJSON value) input
+  setValue value input
   
   -- Subscribe for updates on the input
   -- TODO: add this to the subscription
@@ -27,7 +27,7 @@ bindValueTwoWay ref input = do
 
   -- Subscribe for updates on the RVar
   subscribe ref $ \newValue -> do
-    setValue (toJSON newValue) input
+    setValue newValue input
     return {}
 
 -- |
@@ -37,7 +37,7 @@ bindCheckedTwoWay :: forall a eff. RVar Boolean -> JQuery -> Eff (reactive :: Re
 bindCheckedTwoWay ref checkbox = do
   -- Set the checked status based on the current value
   value <- readRVar ref
-  setProp "checked" (toJSON value) checkbox
+  setProp "checked" value checkbox
   
   -- Subscribe for updates on the checkbox
   -- TODO: add this to the subscription
@@ -47,7 +47,7 @@ bindCheckedTwoWay ref checkbox = do
 
   -- Subscribe for updates on the RVar
   subscribe ref $ \newValue -> do
-    setProp "checked" (toJSON newValue) checkbox
+    setProp "checked" newValue checkbox
     return {}
 
 -- |

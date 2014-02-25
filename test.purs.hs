@@ -68,7 +68,7 @@ todoListDemo = do
     li <- create "<li>"
 
     completedInput <- create "<input>"
-    setAttr "type" (toJSON "checkbox") completedInput
+    setAttr "type" "checkbox" completedInput
     completedInput `append` li
     sub1 <- bindCheckedTwoWay entry.completed completedInput
     

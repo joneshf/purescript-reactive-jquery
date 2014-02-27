@@ -7,7 +7,7 @@ import Control.Monad.Eff
 import Data.Monoid
 import Debug.Trace
 import Data.Maybe
-import Data.Array (map, foldl, head)
+import Data.Array (map, foldl, head, length)
 import Global (parseInt)
 import JQuery
 import Reactive
@@ -60,11 +60,15 @@ todoListDemo = do
 
   -- Create an array
   arr <- newRArray
+
+  text1 <- newRVar "Learn PureScript"
+  comp1 <- newRVar false
+  insertRArray arr { text: text1, completed: comp1 } 0
   
   ul <- create "<ul>"
 
   -- Bind the ul to the array
-  bindArray arr ul $ \entry index -> do
+  bindArray arr ul $ \entry indexR -> do
     li <- create "<li>"
 
     completedInput <- create "<input>"
@@ -79,6 +83,7 @@ todoListDemo = do
     btn <- create "<button>"
     "Remove" `appendText` btn
     flip (on "click") btn $ do
+      index <- readRVar indexR
       removeRArray arr index
     btn `append` li
 
@@ -96,7 +101,8 @@ todoListDemo = do
   flip (on "click") btn $ do
     text <- newRVar ""
     completed <- newRVar false
-    insertRArray arr { text: text, completed: completed } 0
+    arr' <- readRArray arr
+    insertRArray arr { text: text, completed: completed } (length arr')
 
   -- Create a paragraph to display the next task
   nextTaskLabel <- create "<p>"

@@ -3,6 +3,7 @@ module ReactiveJQuery where
 import Prelude
 import Data.Either
 import Control.Monad.Eff
+import Control.Monad.Eff.Unsafe (unsafeInterleaveEff)
 import JQuery
 import Reactive
 import Control.Monad
@@ -66,13 +67,15 @@ bindTextOneWay comp el = do
 -- |
 -- Bind an RArray
 --
---bindArray :: forall a eff. RArray a -> JQuery -> (a -> RVar Number -> Eff eff { el :: JQuery, subscription :: Subscription }) -> Eff (reactive :: Reactive, dom :: DOM | eff) Subscription
+bindArray :: forall a eff. RArray a -> JQuery -> 
+                           (a -> RVar Number -> Eff eff { el :: JQuery, subscription :: Subscription }) -> 
+                           Eff (reactive :: Reactive, dom :: DOM | eff) Subscription
 bindArray arr el create = unsafeRunIORef $ do
   -- Create a DOM element for each element currently in the array
   arr' <- readRArray arr
   elements' <- zipWithM (\a index -> do
     indexR <- newRVar index
-    { el = child, subscription = subscription } <- create a indexR
+    { el = child, subscription = subscription } <- unsafeInterleaveEff $ create a indexR
     child `append` el
     return { el: child
            , subscription: subscription
@@ -83,28 +86,30 @@ bindArray arr el create = unsafeRunIORef $ do
   subscribeArray arr $ \change -> case change of
     Inserted a index -> do
       indexR <- newRVar index
-      { el = child, subscription = subscription } <- create a indexR
+      { el = child, subscription = subscription } <- unsafeInterleaveEff $ create a indexR
       others <- readIORef elements
       flip mapM others $ \{ index = indexR } -> modifyRVar indexR (\i -> if i > index then i + 1 else i)
-      modifyIORef elements (insertAt index { el: child
-                                           , subscription: subscription
-                                           , index: indexR })
+      modifyIORef elements $
+        insertAt index { el: child
+                       , subscription: subscription
+                       , index: indexR }
       appendAtIndex index child el 
       return {}
     Updated a index -> do
-      { el = old, subscription = Subscription unsubscribe, index = indexR } <- (flip (!!) index) <$> readIORef elements
+      { el = old, subscription = Subscription unsubscribe, index = indexR } <- flip (!!) index <$> readIORef elements
       unsubscribe
       remove old
 
-      { el = new, subscription = subscription } <- create a indexR
-      modifyIORef elements (updateAt index { el: new
-                                           , subscription: subscription
-                                           , index: indexR })
+      { el = new, subscription = subscription } <- unsafeInterleaveEff $ create a indexR
+      modifyIORef elements $
+        updateAt index { el: new
+                       , subscription: subscription
+                       , index: indexR }
       appendAtIndex index new el
  
       return {}
     Removed index -> do
-      { el = child, subscription = Subscription unsubscribe } <- (flip (!!) index) <$> readIORef elements
+      { el = child, subscription = Subscription unsubscribe } <- flip (!!) index <$> readIORef elements
       unsubscribe
       remove child
       modifyIORef elements (deleteAt index 1)

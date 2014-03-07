@@ -9,9 +9,9 @@ import Debug.Trace
 import Data.Maybe
 import Data.Array (map, foldl, head, length)
 import Global (parseInt)
-import JQuery
-import Reactive
-import ReactiveJQuery
+import Control.Monad.JQuery
+import Control.Reactive
+import Control.Reactive.JQuery
 
 main = do
   personDemo

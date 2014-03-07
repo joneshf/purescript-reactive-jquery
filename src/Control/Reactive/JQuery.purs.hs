@@ -1,12 +1,12 @@
-module ReactiveJQuery where
+module Control.Reactive.JQuery where
 
 import Prelude
 import Data.Either
+import Control.Monad
 import Control.Monad.Eff
 import Control.Monad.Eff.Unsafe (unsafeInterleaveEff)
-import JQuery
-import Reactive
-import Control.Monad
+import Control.Monad.JQuery
+import Control.Reactive
 import Data.JSON
 import Data.Array (insertAt, deleteAt, updateAt, range, length, drop)
 import Data.IORef (newIORef, readIORef, modifyIORef, unsafeRunIORef)

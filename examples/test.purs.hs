@@ -1,17 +1,19 @@
 module Main where
 
-import Prelude
-import Data.JSON
+import Prelude ((+), (++), (<$>), (<*>), ($), (<<<), flip, return, show)
 import Control.Monad
 import Control.Monad.Eff
-import Data.Monoid
-import Debug.Trace
-import Data.Maybe
-import Data.Array (map, foldl, head, length)
-import Global (parseInt)
 import Control.Monad.JQuery
 import Control.Reactive
 import Control.Reactive.JQuery
+import Data.Array (map, head, length)
+import Data.Foldable
+import Data.Foreign
+import Data.Maybe
+import Data.Monoid
+import Data.Traversable
+import Debug.Trace
+import Global (parseInt)
 
 main = do
   personDemo
@@ -121,6 +123,6 @@ todoListDemo = do
 
   let counter = (flip (++) " tasks remaining") <<< show <$> do
     rs <- toComputedArray arr
-    cs <- map (\c -> if c then 0 else 1) <$> mapM (\entry -> toComputed entry.completed) rs
+    cs <- map (\c -> if c then 0 else 1) <$> traverse (\entry -> toComputed entry.completed) rs
     return $ foldl (+) 0 cs
   bindTextOneWay counter counterLabel

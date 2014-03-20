@@ -1,4 +1,4 @@
-js/
-purescript-json/
-purescript-jquery/
-purescript-reactive/
+/js/
+/externs/
+/node_modules/
+/bower_components/

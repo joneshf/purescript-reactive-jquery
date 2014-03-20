@@ -1,20 +1,23 @@
 module Control.Reactive.JQuery where
 
-import Prelude
-import Data.Either
+import Prelude (($), (<$>), (-), (>), (+), (!!), flip, return)
+import Control.Applicative
 import Control.Monad
 import Control.Monad.Eff
 import Control.Monad.Eff.Unsafe (unsafeInterleaveEff)
+import Control.Monad.Eff.Ref (newRef, readRef, modifyRef)
+import Control.Monad.Eff.Ref.Unsafe (unsafeRunRef)
 import Control.Monad.JQuery
 import Control.Reactive
-import Data.JSON
 import Data.Array (insertAt, deleteAt, updateAt, range, length, drop)
-import Data.IORef (newIORef, readIORef, modifyIORef, unsafeRunIORef)
+import Data.Either
+import Data.Foreign
+import Data.Traversable
 
 -- |
 -- Bind the value property of an input field to the specified RVar
 -- i
-bindValueTwoWay :: forall a eff. (ReadJSON a) => RVar a -> JQuery -> Eff (reactive :: Reactive, dom :: DOM | eff) Subscription
+bindValueTwoWay :: forall a eff. (ReadForeign a) => RVar a -> JQuery -> Eff (reactive :: Reactive, dom :: DOM | eff) Subscription
 bindValueTwoWay ref input = do
   -- Set the value on the input to the current value
   value <- readRVar ref
@@ -23,7 +26,7 @@ bindValueTwoWay ref input = do
   -- Subscribe for updates on the input
   -- TODO: add this to the subscription
   flip (on "change") input $ do
-    Right newValue <- runParser readJSON <$> getValue input
+    Right newValue <- parseForeign read <$> getValue input
     writeRVar ref newValue
 
   -- Subscribe for updates on the RVar
@@ -43,7 +46,7 @@ bindCheckedTwoWay ref checkbox = do
   -- Subscribe for updates on the checkbox
   -- TODO: add this to the subscription
   flip (on "change") checkbox $ do
-    Right newValue <- runParser readJSON <$> getProp "checked" checkbox
+    Right newValue <- parseForeign read <$> getProp "checked" checkbox
     writeRVar ref newValue
 
   -- Subscribe for updates on the RVar
@@ -70,38 +73,38 @@ bindTextOneWay comp el = do
 bindArray :: forall a eff. RArray a -> JQuery -> 
                            (a -> RVar Number -> Eff eff { el :: JQuery, subscription :: Subscription }) -> 
                            Eff (reactive :: Reactive, dom :: DOM | eff) Subscription
-bindArray arr el create = unsafeRunIORef $ do
+bindArray arr el create = unsafeRunRef $ do
   -- Create a DOM element for each element currently in the array
   arr' <- readRArray arr
-  elements' <- zipWithM (\a index -> do
+  elements' <- zipWithA (\a index -> do
     indexR <- newRVar index
     { el = child, subscription = subscription } <- unsafeInterleaveEff $ create a indexR
     child `append` el
     return { el: child
            , subscription: subscription
            , index: indexR }) arr' (range 0 (length arr' - 1))
-  elements <- newIORef elements'
+  elements <- newRef elements'
 
   -- Subscribe for updates on the array
   subscribeArray arr $ \change -> case change of
     Inserted a index -> do
       indexR <- newRVar index
       { el = child, subscription = subscription } <- unsafeInterleaveEff $ create a indexR
-      others <- readIORef elements
-      flip mapM others $ \{ index = indexR } -> modifyRVar indexR (\i -> if i > index then i + 1 else i)
-      modifyIORef elements $
+      others <- readRef elements
+      flip traverse others $ \{ index = indexR } -> modifyRVar indexR (\i -> if i > index then i + 1 else i)
+      modifyRef elements $
         insertAt index { el: child
                        , subscription: subscription
                        , index: indexR }
       appendAtIndex index child el 
       return {}
     Updated a index -> do
-      { el = old, subscription = Subscription unsubscribe, index = indexR } <- flip (!!) index <$> readIORef elements
+      { el = old, subscription = Subscription unsubscribe, index = indexR } <- flip (!!) index <$> readRef elements
       unsubscribe
       remove old
 
       { el = new, subscription = subscription } <- unsafeInterleaveEff $ create a indexR
-      modifyIORef elements $
+      modifyRef elements $
         updateAt index { el: new
                        , subscription: subscription
                        , index: indexR }
@@ -109,11 +112,11 @@ bindArray arr el create = unsafeRunIORef $ do
  
       return {}
     Removed index -> do
-      { el = child, subscription = Subscription unsubscribe } <- flip (!!) index <$> readIORef elements
+      { el = child, subscription = Subscription unsubscribe } <- flip (!!) index <$> readRef elements
       unsubscribe
       remove child
-      modifyIORef elements (deleteAt index 1)
-      others <- readIORef elements
-      flip mapM others $ \{ index = indexR } -> modifyRVar indexR (\i -> if i > index then i - 1 else i)
+      modifyRef elements (deleteAt index 1)
+      others <- readRef elements
+      flip traverse others $ \{ index = indexR } -> modifyRVar indexR (\i -> if i > index then i - 1 else i)
       return {}
 

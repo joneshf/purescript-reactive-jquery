@@ -1,0 +1,24 @@
+{
+  "name": "purescript-reactive-jquery",
+  "version": "0.0.0",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "examples",
+    "externs",
+    "js"
+  ],
+  "dependencies": {
+    "purescript-either": "*",
+    "purescript-jquery": "*",
+    "purescript-reactive": "*",
+    "purescript-foreign": "*",
+    "purescript-arrays": "*",
+    "purescript-refs": "*",
+    "purescript-foldable-traversable": "*"
+  },
+  "devDependencies": {
+    "purescript-globals": "*"
+  }
+}

@@ -91,7 +91,7 @@ bindArray arr el create = unsafeRunRef $ do
       indexR <- newRVar index
       { el = child, subscription = subscription } <- unsafeInterleaveEff $ create a indexR
       others <- readRef elements
-      flip traverse others $ \{ index = indexR } -> modifyRVar indexR (\i -> if i > index then i + 1 else i)
+      traverse (\{ index = indexR } -> modifyRVar indexR (\i -> if i > index then i + 1 else i)) others
       modifyRef elements $
         insertAt index { el: child
                        , subscription: subscription
@@ -117,6 +117,6 @@ bindArray arr el create = unsafeRunRef $ do
       remove child
       modifyRef elements (deleteAt index 1)
       others <- readRef elements
-      flip traverse others $ \{ index = indexR } -> modifyRVar indexR (\i -> if i > index then i - 1 else i)
+      traverse (\{ index = indexR } -> modifyRVar indexR (\i -> if i > index then i - 1 else i)) others
       return {}
 

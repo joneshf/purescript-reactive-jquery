@@ -1,6 +1,6 @@
 module Main where
 
-import Prelude ((+), (++), (<$>), (<*>), ($), (<<<), flip, return, show)
+import Prelude ((+), (++), (<>), (<$>), (<*>), ($), (<<<), flip, return, show)
 import Control.Monad
 import Control.Monad.Eff
 import Control.Monad.JQuery
@@ -84,7 +84,7 @@ todoListDemo = do
 
     btn <- create "<button>"
     "Remove" `appendText` btn
-    flip (on "click") btn $ do
+    flip (on "click") btn $ \_ -> do
       index <- readRVar indexR
       removeRArray arr index
     btn `append` li
@@ -100,7 +100,7 @@ todoListDemo = do
   btn `append` newEntryDiv
   newEntryDiv `append` b
 
-  flip (on "click") btn $ do
+  flip (on "click") btn $ \_ -> do
     text <- newRVar ""
     completed <- newRVar false
     arr' <- readRArray arr
@@ -111,10 +111,10 @@ todoListDemo = do
   nextTaskLabel `append` b
 
   let nextTask = do
-    task <- head <$> toComputedArray arr
-    case task of
-      Nothing -> return "Done!"
-      Just { text = text } -> (++) "Next task: " <$> toComputed text
+        task <- head <$> toComputedArray arr
+        case task of
+          Nothing -> return "Done!"
+          Just { text = text } -> (++) "Next task: " <$> toComputed text
   bindTextOneWay nextTask nextTaskLabel
 
   -- Create a paragraph to display the task counter
@@ -122,7 +122,7 @@ todoListDemo = do
   counterLabel `append` b
 
   let counter = (flip (++) " tasks remaining") <<< show <$> do
-    rs <- toComputedArray arr
-    cs <- map (\c -> if c then 0 else 1) <$> traverse (\entry -> toComputed entry.completed) rs
-    return $ foldl (+) 0 cs
+        rs <- toComputedArray arr
+        cs <- map (\c -> if c then 0 else 1) <$> traverse (\entry -> toComputed entry.completed) rs
+        return $ foldl (+) 0 cs
   bindTextOneWay counter counterLabel

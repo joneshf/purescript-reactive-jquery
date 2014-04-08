@@ -25,7 +25,7 @@ bindValueTwoWay ref input = do
   
   -- Subscribe for updates on the input
   -- TODO: add this to the subscription
-  flip (on "change") input $ do
+  flip (on "change") input $ \_ -> do
     Right newValue <- parseForeign read <$> getValue input
     writeRVar ref newValue
 
@@ -45,7 +45,7 @@ bindCheckedTwoWay ref checkbox = do
   
   -- Subscribe for updates on the checkbox
   -- TODO: add this to the subscription
-  flip (on "change") checkbox $ do
+  flip (on "change") checkbox $ \_ -> do
     Right newValue <- parseForeign read <$> getProp "checked" checkbox
     writeRVar ref newValue
 

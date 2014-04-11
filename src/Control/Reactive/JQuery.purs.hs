@@ -1,6 +1,7 @@
 module Control.Reactive.JQuery where
 
-import Prelude (($), (<$>), (-), (>), (+), (!!), flip, return)
+import Prelude (($), (<$>), (-), (>), (+), flip, return)
+import Prelude.Unsafe (unsafeIndex)
 import Control.Applicative
 import Control.Monad
 import Control.Monad.Eff
@@ -99,7 +100,7 @@ bindArray arr el create = unsafeRunRef $ do
       appendAtIndex index child el 
       return {}
     Updated a index -> do
-      { el = old, subscription = Subscription unsubscribe, index = indexR } <- flip (!!) index <$> readRef elements
+      { el = old, subscription = Subscription unsubscribe, index = indexR } <- flip unsafeIndex index <$> readRef elements
       unsubscribe
       remove old
 
@@ -112,7 +113,7 @@ bindArray arr el create = unsafeRunRef $ do
  
       return {}
     Removed index -> do
-      { el = child, subscription = Subscription unsubscribe } <- flip (!!) index <$> readRef elements
+      { el = child, subscription = Subscription unsubscribe } <- flip unsafeIndex index <$> readRef elements
       unsubscribe
       remove child
       modifyRef elements (deleteAt index 1)

@@ -2,7 +2,6 @@ module Control.Reactive.JQuery where
 
 import Prelude (($), (<$>), (-), (>), (+), flip, return)
 import Prelude.Unsafe (unsafeIndex)
-import Control.Applicative
 import Control.Monad
 import Control.Monad.Eff
 import Control.Monad.Eff.Unsafe (unsafeInterleaveEff)
@@ -23,7 +22,7 @@ bindValueTwoWay ref input = do
   -- Set the value on the input to the current value
   value <- readRVar ref
   setValue value input
-  
+
   -- Subscribe for updates on the input
   -- TODO: add this to the subscription
   flip (on "change") input $ \_ -> do
@@ -37,13 +36,13 @@ bindValueTwoWay ref input = do
 
 -- |
 -- Bind the checked property of a checkbox to the specified RVar
--- 
+--
 bindCheckedTwoWay :: forall eff. RVar Boolean -> JQuery -> Eff (reactive :: Reactive, dom :: DOM | eff) Subscription
 bindCheckedTwoWay ref checkbox = do
   -- Set the checked status based on the current value
   value <- readRVar ref
   setProp "checked" value checkbox
-  
+
   -- Subscribe for updates on the checkbox
   -- TODO: add this to the subscription
   flip (on "change") checkbox $ \_ -> do
@@ -57,7 +56,7 @@ bindCheckedTwoWay ref checkbox = do
 
 -- |
 -- Bind the text content of an element to the specified computed value
--- 
+--
 bindTextOneWay comp el = do
   -- Set the text on the element to the current value
   text <- readComputed comp
@@ -71,8 +70,8 @@ bindTextOneWay comp el = do
 -- |
 -- Bind an RArray
 --
-bindArray :: forall a eff. RArray a -> JQuery -> 
-                           (a -> RVar Number -> Eff eff { el :: JQuery, subscription :: Subscription }) -> 
+bindArray :: forall a eff. RArray a -> JQuery ->
+                           (a -> RVar Number -> Eff eff { el :: JQuery, subscription :: Subscription }) ->
                            Eff (reactive :: Reactive, dom :: DOM | eff) Subscription
 bindArray arr el create = unsafeRunRef $ do
   -- Create a DOM element for each element currently in the array
@@ -97,7 +96,7 @@ bindArray arr el create = unsafeRunRef $ do
         insertAt index { el: child
                        , subscription: subscription
                        , index: indexR }
-      appendAtIndex index child el 
+      appendAtIndex index child el
       return {}
     Updated a index -> do
       { el = old, subscription = Subscription unsubscribe, index = indexR } <- flip unsafeIndex index <$> readRef elements
@@ -110,7 +109,7 @@ bindArray arr el create = unsafeRunRef $ do
                        , subscription: subscription
                        , index: indexR }
       appendAtIndex index new el
- 
+
       return {}
     Removed index -> do
       { el = child, subscription = Subscription unsubscribe } <- flip unsafeIndex index <$> readRef elements
